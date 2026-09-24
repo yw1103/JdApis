@@ -3,10 +3,28 @@
 #
 # 镜像含 Python（JdApis）+ Node（h5st / 设备票据等），不改业务核心代码。
 # 登录态默认写 /tmp/jdapis/auth.json；compose 用 tmpfs 挂载该目录，不持久化。
+#
+# 国内云主机（腾讯云等）构建提示：
+# - 基础镜像仍走官方 node/python（Docker Hub）。若拉基础镜像超时，请在宿主机
+#   /etc/docker/daemon.json 配置 registry-mirrors，见 mcp_server/README.md。
+# - apt / pip / npm 默认用国内源（腾讯云 apt、清华 pip、npmmirror）；可用 build-arg 覆盖。
+#
+# 可选覆盖示例（海外环境可改回官方源）：
+#   docker build -f mcp_server/Dockerfile \
+#     --build-arg APT_MIRROR=deb.debian.org \
+#     --build-arg PIP_INDEX_URL=https://pypi.org/simple \
+#     --build-arg NPM_REGISTRY=https://registry.npmjs.org \
+#     -t jd-apis-mcp .
 
 FROM node:20-bookworm-slim AS node_base
 
 FROM python:3.11-slim-bookworm
+
+# 国内友好默认源；海外或自定义镜像站可通过 --build-arg 覆盖
+ARG APT_MIRROR=mirrors.cloud.tencent.com
+ARG PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
+ARG PIP_TRUSTED_HOST=pypi.tuna.tsinghua.edu.cn
+ARG NPM_REGISTRY=https://registry.npmmirror.com
 
 COPY --from=node_base /usr/local/bin/node /usr/local/bin/node
 COPY --from=node_base /usr/local/lib/node_modules /usr/local/lib/node_modules
@@ -14,16 +32,33 @@ RUN ln -sf /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
     && ln -sf /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
 
 # opencv / onnxruntime / @napi-rs/canvas 运行期库
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# 先换 Debian bookworm 源再 apt-get update，避免国内直连 deb.debian.org 卡住
+RUN set -eux; \
+    if [ -n "${APT_MIRROR}" ] && [ "${APT_MIRROR}" != "deb.debian.org" ]; then \
+      sed -i \
+        -e "s|deb.debian.org|${APT_MIRROR}|g" \
+        -e "s|security.debian.org|${APT_MIRROR}|g" \
+        /etc/apt/sources.list.d/debian.sources 2>/dev/null \
+      || sed -i \
+        -e "s|deb.debian.org|${APT_MIRROR}|g" \
+        -e "s|security.debian.org|${APT_MIRROR}|g" \
+        /etc/apt/sources.list; \
+    fi; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
         ca-certificates \
         curl \
         libatomic1 \
         libgomp1 \
         libglib2.0-0 \
-        fontconfig \
-    && rm -rf /var/lib/apt/lists/*
+        fontconfig; \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+
+ENV PIP_INDEX_URL=${PIP_INDEX_URL} \
+    PIP_TRUSTED_HOST=${PIP_TRUSTED_HOST} \
+    NPM_CONFIG_REGISTRY=${NPM_REGISTRY}
 
 # 依赖层缓存：先装 Python / Node，再拷业务代码
 COPY requirements.txt ./

@@ -10,8 +10,15 @@
 services:
   jd-apis-mcp:
     build:
+      # 相对本文件：无论在仓库根还是 mcp_server/ 下执行 compose，context 都是仓库根
       context: ..
       dockerfile: mcp_server/Dockerfile
+      # 国内默认源已写在 Dockerfile；海外或自定义镜像站可取消注释覆盖：
+      # args:
+      #   APT_MIRROR: deb.debian.org
+      #   PIP_INDEX_URL: https://pypi.org/simple
+      #   PIP_TRUSTED_HOST: pypi.org
+      #   NPM_REGISTRY: https://registry.npmjs.org
     image: jd-apis-mcp:latest
     container_name: jd-apis-mcp
     ports:

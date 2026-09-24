@@ -30,6 +30,10 @@ docker compose -f mcp_server/docker-compose.yml up -d --build
 docker compose up -d --build
 ```
 
+`build.context` 为 `..`（仓库根），从 `mcp_server/` 执行同样正确。
+
+国内云主机若构建卡住或 Docker Hub 超时，见下方 [国内云主机构建加速](#国内云主机构建加速腾讯云等)；建议用 `docker compose build --progress=plain` 查看详细进度。
+
 自检：
 
 ```bash
@@ -188,6 +192,77 @@ docker run --rm -d \
 - **安全**：默认绑定 `127.0.0.1`；切勿把带登录态的端口裸暴露公网。
 - **网络**：容器需能访问京东相关域名；公司代理请自行配置。
 - **体积**：镜像含 Node、`static/`（含 JCAP ONNX），首次构建较慢属正常。
+
+## 国内云主机构建加速（腾讯云等）
+
+国内直连 Docker Hub / `deb.debian.org` 常超时或「卡住很久没反应」。Dockerfile 已默认换国内 **apt / pip / npm** 源；**基础镜像**仍用官方 `node` / `python`，需在宿主机配 Docker Hub 镜像加速。
+
+### 1. 宿主机配置 Docker Hub 镜像（registry-mirrors）
+
+编辑 `/etc/docker/daemon.json`（没有就新建），例如：
+
+```json
+{
+  "registry-mirrors": [
+    "https://mirror.ccs.tencentyun.com"
+  ]
+}
+```
+
+腾讯云 CVM 内网常用 `mirror.ccs.tencentyun.com`；也可换成你账号控制台提供的加速地址，或其他可用 mirror。然后：
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+```
+
+验证：`docker info` 里应能看到 `Registry Mirrors`。
+
+> 不要随意把 Dockerfile 的 `FROM` 改成不明来源的「替代 base」；优先用官方镜像 + 宿主机 mirror。
+
+### 2. 镜像内 apt / pip / npm（已默认国内源）
+
+| 用途 | 默认 | 覆盖方式 |
+| --- | --- | --- |
+| apt（Debian bookworm） | `mirrors.cloud.tencent.com` | `--build-arg APT_MIRROR=...` |
+| pip | 清华 `pypi.tuna.tsinghua.edu.cn` | `--build-arg PIP_INDEX_URL=...` |
+| npm | `registry.npmmirror.com` | `--build-arg NPM_REGISTRY=...` |
+
+阿里云 apt 示例：`--build-arg APT_MIRROR=mirrors.aliyun.com`  
+海外恢复官方源示例：
+
+```bash
+docker build -f mcp_server/Dockerfile \
+  --build-arg APT_MIRROR=deb.debian.org \
+  --build-arg PIP_INDEX_URL=https://pypi.org/simple \
+  --build-arg PIP_TRUSTED_HOST=pypi.org \
+  --build-arg NPM_REGISTRY=https://registry.npmjs.org \
+  -t jd-apis-mcp .
+```
+
+也可在 `docker-compose.yml` 的 `build.args` 里覆盖（文件内有注释示例）。
+
+### 3. 看清构建进度（不要干等）
+
+```bash
+# 在 mcp_server/ 目录
+docker compose build --progress=plain --no-cache
+
+# 或仓库根
+docker compose -f mcp_server/docker-compose.yml build --progress=plain
+```
+
+`apt-get update` 第一次可能要几十秒；若超过数分钟仍无新输出，再 Ctrl+C，确认已拉取含国内源的 Dockerfile 后重试。
+
+### 4. 拉取本仓库最新 Dockerfile 后重建
+
+```bash
+cd /path/to/JdApis
+git pull
+cd mcp_server
+docker compose build --progress=plain
+docker compose up -d
+```
 
 ## 与原项目的关系
 
