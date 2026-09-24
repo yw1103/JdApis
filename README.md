@@ -196,6 +196,8 @@ JdApis/
 
 如需把本项目能力以 MCP over SSE 暴露给 Cursor 等客户端，见独立目录文档：[mcp_server/README.md](./mcp_server/README.md)（含本机启动与 **Docker / 外网部署**）。该层不修改核心业务代码，可与上游并行维护。Docker 构建若 pip 报 `from versions: none`，多为索引不可达，请用 `--build-arg PIP_INDEX_URL=...` 换源（见 `mcp_server/README.md`）。
 
+配套的 Codex Skill 位于 [`.agents/skills/jd-shopping-assistant`](./.agents/skills/jd-shopping-assistant/SKILL.md)。它会按“登录检查 → 需求结构化 → 购物车基线 → 搜索与硬条件筛选 → 评论分析 → 商家评分 → 最终确认 → 操作审计”的顺序编排 MCP，并输出完整报告。当前 MCP 尚未提供商家消息发送和加入购物车工具，因此 Skill 会把这两步明确标记为能力阻塞，不会误报成功。
+
 ## 📈 Star 趋势
 
 <a href="https://cvcat.site/star-history/svg?repos=cv-cat/JdApis&type=Date">
