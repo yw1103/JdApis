@@ -7,7 +7,7 @@
 
 启动（在项目根目录）：
   python mcp_server/server.py
-  python mcp_server/server.py --host 127.0.0.1 --port 8765
+  python mcp_server/server.py --host 0.0.0.0 --port 8765
 """
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ import bridge
 import login_flow
 
 
-def create_mcp(host: str = "127.0.0.1", port: int = 8765) -> FastMCP:
+def create_mcp(host: str = "0.0.0.0", port: int = 8765) -> FastMCP:
     mcp = FastMCP(
         "jd-apis",
         instructions=(
@@ -175,7 +175,7 @@ def create_mcp(host: str = "127.0.0.1", port: int = 8765) -> FastMCP:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="JdApis MCP Server (SSE)")
-    parser.add_argument("--host", default="127.0.0.1", help="监听地址，默认 127.0.0.1")
+    parser.add_argument("--host", default="0.0.0.0", help="监听地址，默认 0.0.0.0（容器/外网映射需要）")
     parser.add_argument("--port", type=int, default=8765, help="监听端口，默认 8765")
     args = parser.parse_args(argv)
 

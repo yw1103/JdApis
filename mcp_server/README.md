@@ -12,7 +12,7 @@
 | `POST` | `/messages/` | 客户端投递 JSON-RPC 消息 |
 | `GET` | `/health` | 健康检查（非 MCP 协议） |
 
-默认监听：`http://127.0.0.1:8765`
+默认监听：`0.0.0.0:8765`（compose 映射后本机/公网均可访问）。公网暴露带登录态的服务有风险，自行注意。
 
 ## 推荐：Docker Compose 一键部署
 
@@ -50,12 +50,14 @@ docker compose -f mcp_server/docker-compose.yml down
 
 | 变量 | 默认 | 说明 |
 | --- | --- | --- |
-| `MCP_HOST` | `127.0.0.1` | 宿主机绑定地址 |
+| `MCP_HOST` | `0.0.0.0` | 宿主机绑定地址 |
 | `MCP_PORT` | `8765` | 宿主机端口 |
 
 容器内固定：`JDAPIS_AUTH_FILE=/tmp/jdapis/auth.json`，且 `/tmp/jdapis` 为 **tmpfs**（无 volumes / 无 named volume）。
 
 ### Cursor 连接（SSE）
+
+本机：
 
 ```json
 {
@@ -67,10 +69,21 @@ docker compose -f mcp_server/docker-compose.yml down
 }
 ```
 
-先 `compose up`，再在 Cursor 中启用/刷新该 server。仅建议绑本机回环；勿对公网裸暴露。
+外网服务器（安全组放行 TCP 8765 后）：
+
+```json
+{
+  "mcpServers": {
+    "jd-apis": {
+      "url": "http://你的公网IP:8765/sse"
+    }
+  }
+}
+```
+
+先 `compose up`，再在 Cursor 中启用/刷新该 server。登录在容器内完成；`down` 后登录态丢失。
 
 ### 容器内登录（MCP tools）
-
 登录**必须在容器内**完成，通过 Cursor 调用下列 tools（不要把 Cookie 拷到宿主机）：
 
 **扫码（推荐）**
@@ -180,7 +193,7 @@ docker build -f mcp_server/Dockerfile -t jd-apis-mcp .
 ```bash
 docker run --rm -d \
   --name jd-apis-mcp \
-  -p 127.0.0.1:8765:8765 \
+  -p 8765:8765 \
   -e JDAPIS_AUTH_FILE=/tmp/jdapis/auth.json \
   --tmpfs /tmp/jdapis:size=32m,mode=1777 \
   jd-apis-mcp
@@ -189,7 +202,7 @@ docker run --rm -d \
 ## Docker 注意事项
 
 - **不持久化**：compose 无 auth volume；`down` / 重建容器后需重新登录。
-- **安全**：默认绑定 `127.0.0.1`；切勿把带登录态的端口裸暴露公网。
+- **端口**：默认 `0.0.0.0:8765`；公网注意风险。
 - **网络**：容器需能访问京东相关域名；公司代理请自行配置。
 - **体积**：镜像含 Node、`static/`（含 JCAP ONNX），首次构建较慢属正常。
 
