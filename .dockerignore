@@ -1,0 +1,26 @@
+# Docker 构建上下文（仓库根）忽略项 —— 仅影响 `docker build`，不改业务逻辑。
+.git
+.github
+.idea
+.vscode
+**/__pycache__
+**/*.pyc
+**/*.pyo
+.pytest_cache
+node_modules
+.env
+.env.*
+!.env.example
+*.log
+auth.json
+auth.json.tmp
+datas/
+qrcode.png
+*.har
+*.pcap
+*.pcapng
+author/
+agent-transcripts/
+tmp-*
+.jd-login-profile-*/
+mcp_server/**/__pycache__

@@ -192,6 +192,10 @@ JdApis/
   <img src="./author/zfb_pay.jpg" width="360" alt="支付宝收款码">
 </div>
 
+## 🔌 MCP（可选衍生）
+
+如需把本项目能力以 MCP over SSE 暴露给 Cursor 等客户端，见独立目录文档：[mcp_server/README.md](./mcp_server/README.md)（含本机启动与 **Docker 部署**）。该层不修改核心业务代码，可与上游并行维护。
+
 ## 📈 Star 趋势
 
 <a href="https://cvcat.site/star-history/svg?repos=cv-cat/JdApis&type=Date">

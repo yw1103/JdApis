@@ -1,0 +1,25 @@
+# 在仓库根目录执行：
+#   docker compose -f mcp_server/docker-compose.yml up -d --build
+#
+# 或在本目录：
+#   docker compose up -d --build
+#
+# 登录态：仅写容器内临时路径（tmpfs），不挂载宿主机、不 named volume 持久化。
+# 容器内通过 MCP 登录工具完成扫码/短信登录。
+
+services:
+  jd-apis-mcp:
+    build:
+      context: ..
+      dockerfile: mcp_server/Dockerfile
+    image: jd-apis-mcp:latest
+    container_name: jd-apis-mcp
+    ports:
+      # 仅建议绑定本机；生产勿对公网裸暴露
+      - "${MCP_HOST:-127.0.0.1}:${MCP_PORT:-8765}:8765"
+    environment:
+      JDAPIS_AUTH_FILE: /tmp/jdapis/auth.json
+    # 登录态与临时文件落在内存盘；docker compose down / 容器销毁后即丢失
+    tmpfs:
+      - /tmp/jdapis:size=32m,mode=1777
+    restart: unless-stopped
