@@ -225,8 +225,16 @@ sudo systemctl restart docker
 | 用途 | 默认 | 覆盖方式 |
 | --- | --- | --- |
 | apt（Debian bookworm） | `mirrors.cloud.tencent.com` | `--build-arg APT_MIRROR=...` |
-| pip | 清华 `pypi.tuna.tsinghua.edu.cn` | `--build-arg PIP_INDEX_URL=...` |
+| pip | 腾讯云 `mirrors.cloud.tencent.com/pypi/simple` | `--build-arg PIP_INDEX_URL=...` / `PIP_TRUSTED_HOST=...` |
 | npm | `registry.npmmirror.com` | `--build-arg NPM_REGISTRY=...` |
+
+若 pip 报 `Could not find a version ... (from versions: none)`，通常是索引不可达/SSL，不是真没有包。可换阿里云：
+
+```bash
+docker compose build --progress=plain \
+  --build-arg PIP_INDEX_URL=https://mirrors.aliyun.com/pypi/simple \
+  --build-arg PIP_TRUSTED_HOST=mirrors.aliyun.com
+```
 
 阿里云 apt 示例：`--build-arg APT_MIRROR=mirrors.aliyun.com`  
 海外恢复官方源示例：
@@ -240,7 +248,7 @@ docker build -f mcp_server/Dockerfile \
   -t jd-apis-mcp .
 ```
 
-也可在 `docker-compose.yml` 的 `build.args` 里覆盖（文件内有注释示例）。
+也可在 `docker-compose.yml` 的 `build.args` 里覆盖（文件内有注释示例）。npm 默认 npmmirror，一般可用；偶发超时可在 Dockerfile 的 `npm ci` 上加大 `--fetch-timeout` / `--fetch-retries`。
 
 ### 3. 看清构建进度（不要干等）
 

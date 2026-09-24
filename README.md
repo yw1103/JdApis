@@ -194,7 +194,7 @@ JdApis/
 
 ## 🔌 MCP（可选衍生）
 
-如需把本项目能力以 MCP over SSE 暴露给 Cursor 等客户端，见独立目录文档：[mcp_server/README.md](./mcp_server/README.md)（含本机启动与 **Docker 部署**）。该层不修改核心业务代码，可与上游并行维护。
+如需把本项目能力以 MCP over SSE 暴露给 Cursor 等客户端，见独立目录文档：[mcp_server/README.md](./mcp_server/README.md)（含本机启动与 **Docker 部署**）。该层不修改核心业务代码，可与上游并行维护。Docker 构建若 pip 报 `from versions: none`，多为索引不可达，请用 `--build-arg PIP_INDEX_URL=...` 换源（见 `mcp_server/README.md`）。
 
 ## 📈 Star 趋势
 
